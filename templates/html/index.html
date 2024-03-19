@@ -1,0 +1,198 @@
+{% extends "base.html" %}
+
+{% block title %}
+    Welcome
+{% endblock %}
+
+{% block content %}
+
+<!-- Content -->
+
+<div class="container-xxl flex-grow-1 container-p-y">
+  <div class="row">
+    <div class="col-lg-8 mb-4 order-0">
+      <div class="card">
+        <div class="d-flex align-items-end row">
+          <div class="col-sm-7">
+            <div class="card-body">
+              <h5 class="card-title text-primary">Project Overview 🎉</h5>
+              <p class="mb-4">
+                This project aims to identify trends and patterns in viewer preference and in-depth genre</p>
+
+              <!-- <a href="javascript:;" class="btn btn-sm btn-outline-primary">View Badges</a> -->
+            </div>
+          </div>
+          <div class="col-sm-5 text-center text-sm-left">
+            <div class="card-body pb-0 px-0 px-md-4">
+              <img
+                src="{{ url_for('static', filename='assets/img/illustrations/man-with-laptop-light.png')}}"
+                height="140"
+                alt="View Badge User"
+                data-app-dark-img="illustrations/man-with-laptop-dark.png"
+                data-app-light-img="illustrations/man-with-laptop-light.png" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-4 col-md-4 order-1">
+      <div class="row">
+        <div class="col-lg-6 col-md-12 col-6 mb-4">
+          <div class="card">
+            <div class="card-body">
+              <div class="card-title d-flex align-items-start justify-content-between">
+                <div class="flex-shrink-0">                    
+              <small class="text-success fw-medium"><i class="bx bx-up-arrow-alt"></i> Highest grossing <br> movie:</small>
+                   <b>  </b>
+                </div>
+                <div class="dropdown">
+                </div>
+              </div>
+              <span class="card-title mb-2">{{ highest_grosing_movie_row['Series_Title'] }}</span>
+              
+              <span class="fw-medium d-block mb-1">${{ highest_grosing_movie_row['Gross'] }}</span>
+              <!-- <small class="text-success fw-medium"><i class="bx bx-up-arrow-alt"></i> +72.80%</small> -->
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-6 col-md-12 col-6 mb-4">
+          <div class="card">
+            <div class="card-body">
+              <div class="card-title d-flex align-items-start justify-content-between">
+                <div class="flex-shrink-0">                    
+              <small class="text-danger fw-medium"><i class="bx bx-down-arrow-alt"></i> Lowest grossing <br> movie:</small>
+                   <b>  </b>
+                </div>
+                <div class="dropdown">
+                </div>
+              </div>
+              <span class="card-title mb-2">{{ lowest_grosing_movie_row['Series_Title'] }}</span>
+              
+              <span class="fw-medium d-block mb-1">${{ lowest_grosing_movie_row['Gross'] }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Total Revenue -->
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <div class="col-8 col-lg-8 order-2 order-md-3 order-lg-2 mb-4">
+      <div class="card">
+        <div class="row row-bordered g-0">
+          <div class="col-md-12">
+            <!-- <h5 class="card-header m-0 me-2 pb-3">Total Revenue</h5> -->
+            <!-- <div id="totalRevenueChart" class="px-2"></div> -->
+            <div id="plotly-chart"></div>
+
+            <script>
+                // Retrieve the Plotly chart JSON from the Flask route
+                var plot_json = {{ plot_json | safe }};
+        
+                // Render the Plotly chart
+                Plotly.newPlot('plotly-chart', plot_json.data, plot_json.layout);
+            </script>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!--/ Total Revenue -->
+    <div class="col-12 col-md-8 col-lg-4 order-3 order-md-2">
+      <div class="row">
+        <div class="col-6 mb-4">
+          <div class="card">
+            <div class="card-body">
+              <div class="card-title d-flex align-items-start justify-content-between">
+                <div class="flex-shrink-0">                    
+              <small class="text-success fw-medium"><i class="bx bx-up-arrow-alt"></i> Highest IMBD Rated <br> Movie:</small>
+                   <b>  </b>
+                </div>
+                <div class="dropdown">
+                </div>
+              </div>
+              <span class="card-title mb-2">{{ highest_rated_movie_row['Series_Title'] }}</span>
+              
+              <span class="fw-medium d-block mb-1"><span style="color: rgb(175, 175, 24);"> ★ </span> {{ highest_rated_movie_row['IMDB_Rating'] }}</span>
+              <!-- <small class="text-success fw-medium"><i class="bx bx-up-arrow-alt"></i> +72.80%</small> -->
+            </div>
+          </div>
+        </div>
+        <div class="col-6 mb-4">
+          <div class="card">
+            <div class="card-body">
+              <div class="card-title d-flex align-items-start justify-content-between">
+                <div class="flex-shrink-0">                    
+              <small class="text-danger fw-medium"><i class="bx bx-down-arrow-alt"></i> Lowest Rated IMDB <br> movie:</small>
+                   <b>  </b>
+                </div>
+                <div class="dropdown">
+                </div>
+              </div>
+              <span class="card-title mb-2">{{ lowest_rated_movie_row['Series_Title'] }}</span>
+              
+              <span class="fw-medium d-block mb-1"><span style="color: rgb(175, 175, 24);"> ★ </span>{{ lowest_rated_movie_row['IMDB_Rating'] }}</span>
+            </div>
+          </div>
+        </div>
+        <!-- </div>
+<div class="row"> -->
+        <!-- <div class="col-12 mb-4">
+          <div class="card">
+            <div class="card-body">
+              <div class="d-flex justify-content-between flex-sm-row flex-column gap-3">
+                <div class="d-flex flex-sm-column flex-row align-items-start justify-content-between">
+                  <div class="card-title">
+                    <h5 class="text-nowrap mb-2">Profile Report</h5>
+                    <span class="badge bg-label-warning rounded-pill">Year 2021</span>
+                  </div>
+                  <div class="mt-sm-auto">
+                    <small class="text-success text-nowrap fw-medium"
+                      ><i class="bx bx-chevron-up"></i> 68.2%</small
+                    >
+                    <h3 class="mb-0">$84,686k</h3>
+                  </div>
+                </div>
+                <div id="profileReportChart"></div>
+              </div>
+            </div>
+          </div>
+        </div> -->
+      </div>
+    </div>
+  </div>
+  <div class="row">
+
+        <!-- Transactions -->
+        <div class="col-md-4 col-lg-4 order-2 mb-4">
+          <div class="card h-100">
+            <div id="doughnut-chart"></div>
+    
+                <script>
+                    // Retrieve the Plotly chart JSON from the Flask route
+                    var doughnut = {{ doughnut | safe }};
+            
+                    // Render the Plotly chart
+                    Plotly.newPlot('doughnut-chart', doughnut.data, doughnut.layout);
+                </script>
+          </div>
+        </div>
+        <!--/ Transactions -->
+
+    <!-- Expense Overview -->
+    <div class="col-8">
+      <div class="card h-100">
+        <div class="card-body px-0">
+          <div id="trend1_plot"></div>
+          <script>
+            // Retrieve the Plotly chart JSONs from the Flask routes
+            var trend1_plot = {{ trend1_plot | safe }};
+            Plotly.newPlot('trend1_plot', trend1_plot.data, trend1_plot.layout);
+        </script>
+        </div>
+      </div>
+    </div>
+    <!--/ Expense Overview -->
+  </div>
+</div>
+<!-- / Content -->
+
+{% endblock %}
