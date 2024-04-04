@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+
+{% block title %}
+Recommendation System
+{% endblock %}
+
+{% block content %}
+
+<style>
+    /* body {
+        font-family: Arial, sans-serif;
+        background-color: #f4f4f4;
+        margin: 0;
+        padding: 0;
+    }
+
+    .container {
+        max-width: 800px;
+        margin: 50px auto;
+        padding: 20px;
+        background-color: #fff;
+        border-radius: 5px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    } */
+
+    h1 {
+        text-align: center;
+    }
+
+    #chat-container {
+        margin-top: 20px;
+    }
+
+    #chat-box {
+        max-height: 300px;
+        overflow-y: auto;
+        border: 1px solid #ccc;
+        padding: 10px;
+    }
+
+    #chat {
+        margin: 0;
+        padding: 0;
+    }
+
+    #user-input {
+        width: calc(100% - 60px);
+        padding: 10px;
+        margin-top: 10px;
+    }
+
+    button {
+        width: 50px;
+        padding: 10px;
+        margin-top: 10px;
+        background-color: #007bff;
+        color: #fff;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+
+    button:hover {
+        background-color: #0056b3;
+    }
+</style>
+
+<body>
+    <div class="container">
+        <br>
+        <b><h1>Movie Recommendation Chatbot</h1></b>
+        <div id="chat-container">
+            <div id="chat-box">
+                <div id="chat">
+                    <p><b>Welcome to the Movie Recommendation Chatbot!</b></p>
+                </div>
+            </div>
+            <input type="text" id="user-input" placeholder="Type your message here...">
+            <button class="btn btn-primary" onclick="sendMessage()">Send</button>
+        </div>
+    </div>
+    <script>
+        function sendMessage() {
+            var message = document.getElementById('user-input').value;
+            var chat = document.getElementById('chat');
+            chat.innerHTML += '<p><strong>You:</strong> ' + message + '</p>';
+            document.getElementById('user-input').value = '';
+
+            fetch('/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: 'message=' + encodeURIComponent(message)
+            })
+                .then(response => response.json())
+                .then(data => {
+                    chat.innerHTML += '<p><strong>Bot:</strong> ' + data.response + '</p>';
+                });
+        }
+    </script>
+    {% endblock %}
