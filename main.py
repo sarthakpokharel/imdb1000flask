@@ -5,40 +5,129 @@ import plotly.express as px
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import linear_kernel
 from fuzzywuzzy import process
+import plotly.graph_objs as go
+import matplotlib.pyplot as plt
+import tempfile
 
 app = Flask(__name__, template_folder='templates/html/')
 
-df = pd.read_csv("cleaned_dataset.csv")
-highest_grosing_movie_row = df.loc[df['Gross'].idxmax()]
-lowest_grosing_movie_row = df.loc[df['Gross'].idxmin()]
 
-lowest_rated_movie_row = df.loc[df['IMDB_Rating'].idxmin()]
-highest_rated_movie_row = df.loc[df['IMDB_Rating'].idxmax()]
+def create_certificate_doughnut_chart(df):
+    certificate_counts = df['Certificate'].value_counts()
+    
+    fig = px.pie(names=certificate_counts.index, 
+                 values=certificate_counts.values, 
+                 hole=0.4, 
+                 title='Distribution of Movie Certificates',
+                 color_discrete_sequence=px.colors.sequential.Sunset[::-1])
+    fig.update_traces(textposition='inside', textinfo='percent+label')
+    fig.update_layout(showlegend=True)
+    
+    return fig.to_json()
+
+def create_gross_earnings_trend(df):
+    trend = px.line(df.groupby('Released_Year')['Gross'].sum().reset_index(), 
+                    x='Released_Year', 
+                    y='Gross', 
+                    title='Total Gross Earnings Over the Years',
+                    labels={'Released_Year': 'Year', 'Gross': 'Total Gross Earnings ($)'},
+                    line_shape='spline', 
+                    color_discrete_sequence=px.colors.sequential.Sunsetdark_r) 
+    trend.update_layout(plot_bgcolor='rgba(0,0,0,0)')
+    
+    return trend.to_json()
 
 
-'''
-Top 10 Genres Calculation Start
-'''
+def create_imdb_vs_gross_scatter(df):
+    data = go.Scatter(
+        x=df['IMDB_Rating'],
+        y=df['Gross'],
+        mode='markers',
+        marker=dict(
+            color=px.colors.sequential.Sunset_r,
+            size=8
+        )
+    )
 
-genres = df['Genre'].apply(lambda x: ast.literal_eval(x))  # Convert string representation to list
-genres = pd.Series([item for sublist in genres for item in sublist])  # Flatten the list
-genre_counts = genres.value_counts().head(10)
-genre_counts = pd.DataFrame({
-    'Genre': genre_counts.index,
-    'Frequency': genre_counts.values
-})
-'''
-Top 10 Genres Calculation End
-'''
+    layout = go.Layout(
+        title='IMDb Ratings vs. Gross Earnings',
+        xaxis=dict(title='IMDb Rating'),
+        yaxis=dict(title='Gross Earnings'),
+        hovermode='closest',
+        plot_bgcolor='rgba(253, 245, 230, 1)',  # Sunset theme background color
+    )
 
-'''
-Doughnut Chart Start
-'''
-# Counting the frequency of each certificate
-certificate_counts = df['Certificate'].value_counts()
-'''
-Doughnut Chart End
-'''
+    fig = go.Figure(data=[data], layout=layout)
+    
+    return fig.to_json()
+
+def create_imdb_ratings_bar_chart(df):
+    fig = px.bar(df, x='Series_Title', y='IMDB_Rating', hover_data=['Released_Year', 'Director'],
+                 title='IMDb Ratings of Movies', labels={'IMDB_Rating': 'IMDb Rating'})
+    fig.update_layout(xaxis_title='Movie Title', yaxis_title='IMDb Rating', xaxis_tickangle=-45,
+                      title_x=0.5, title_font_size=24)
+    
+    return fig.to_html(full_html=False, include_plotlyjs='cdn')
+
+
+def create_average_imdb_ratings_by_director_bar_chart(df):
+    avg_ratings_by_director = df.groupby('Director')['IMDB_Rating'].mean().reset_index()
+    avg_ratings_by_director = avg_ratings_by_director.sort_values(by='IMDB_Rating', ascending=False).head(10)
+    
+    fig = px.bar(avg_ratings_by_director, x='Director', y='IMDB_Rating', 
+                 title='Average IMDb Ratings by Director',
+                 labels={'Director': 'Director', 'IMDB_Rating': 'Average IMDb Rating'},
+                 color='IMDB_Rating',
+                 color_continuous_scale=px.colors.sequential.Sunsetdark_r)
+    
+    # Adjusting y-axis range dynamically
+    min_rating = avg_ratings_by_director['IMDB_Rating'].min()
+    max_rating = avg_ratings_by_director['IMDB_Rating'].max()
+    y_range = [min_rating - 0.5, max_rating + 0.5]  # Adjust the padding as needed
+    
+    fig.update_layout(xaxis_tickangle=-45, plot_bgcolor='rgba(0,0,0,0)', yaxis=dict(range=y_range))
+    return fig.to_json()
+
+
+def create_genre_bar_chart(df):
+    genres = df['Genre'].apply(lambda x: ast.literal_eval(x))
+    genres = pd.Series([item for sublist in genres for item in sublist])
+    genre_counts = genres.value_counts().head(10)
+    genre_counts = pd.DataFrame({
+        'Genre': genre_counts.index,
+        'Frequency': genre_counts.values
+    })
+    
+    fig = px.bar(genre_counts.head(10), 
+                 x='Genre', 
+                 y='Frequency', 
+                 title='Frequency of Movie Genres',
+                 labels={'Frequency': 'Frequency', 'Genre': 'Genre'},
+                 color='Frequency',
+                 color_continuous_scale=px.colors.sequential.Sunsetdark_r[::-1],
+                 template='plotly_white')
+    fig.update_layout(xaxis_tickangle=-45)
+    
+    return fig.to_json()
+
+def create_movie_release_year_imdb_rating_treemap(df):
+    avg_imdb_ratings_by_year = df.groupby('Released_Year')['IMDB_Rating'].mean().reset_index()
+    
+    # Create a DataFrame for the treemap with 'Released_Year' as the path and 'IMDB_Rating' as the values
+    treemap_df = pd.DataFrame({
+        'release_year': avg_imdb_ratings_by_year['Released_Year'],
+        'rating': avg_imdb_ratings_by_year['IMDB_Rating']
+    })
+    
+    # Create the treemap figure
+    fig = px.treemap(treemap_df, path=['release_year'], values='rating', 
+                     title='Movie Release Years and IMDb Ratings',
+                     color='rating', 
+                     color_continuous_scale=px.colors.sequential.Sunsetdark_r[::-1])
+    
+    fig.update_layout(plot_bgcolor='rgba(0,0,0,0)')
+    return fig.to_json()
+
 
 '''
 Recommendation system start
@@ -94,55 +183,34 @@ Recommendation system start
 
 @app.route('/')
 def index():
-    average_gross = 5
-    average_imdb_rating = 5
-    average_rating = 5
-    average_runtime = 5
-    # Plotly chart
-    fig = px.bar(genre_counts.head(10), 
-                 x='Genre', 
-                 y='Frequency', 
-                 title='Frequency of Movie Genres',
-                 labels={'Frequency': 'Frequency', 'Genre': 'Genre'},
-                 color='Frequency',
-                 color_continuous_scale=px.colors.sequential.Sunsetdark_r[::-1],
-                 #color_continuous_scale=[[0, '#7f81ff'], [1, '#7f81ff']],                 
-                 template='plotly_white')
-    fig.update_layout(xaxis_tickangle=-45)
+    df = pd.read_csv("cleaned_dataset.csv")
+    
+    highest_grosing_movie_row = df.loc[df['Gross'].idxmax()]
+    lowest_grosing_movie_row = df.loc[df['Gross'].idxmin()]
+    lowest_rated_movie_row = df.loc[df['IMDB_Rating'].idxmin()]
+    highest_rated_movie_row = df.loc[df['IMDB_Rating'].idxmax()]
+    
+    average_gross = round(df['Gross'].mean(), 2)
+    average_imdb_rating = round(df['IMDB_Rating'].mean(), 2)
+    average_rating = round(df['Meta_score'].mean(), 2)
+    average_runtime = round(df['Runtime'].mean(), 2)
+    
+    plot_json = create_genre_bar_chart(df)
+    doughnut = create_certificate_doughnut_chart(df)
+    trend1_plot = create_gross_earnings_trend(df)
+    graph = create_imdb_vs_gross_scatter(df)
+    plot_html = create_imdb_ratings_bar_chart(df)
+    director_imdb = create_average_imdb_ratings_by_director_bar_chart(df)
+    teremap = create_movie_release_year_imdb_rating_treemap(df)
+    
+    return render_template('index.html', title='Welcome', name='World', highest_grosing_movie_row=highest_grosing_movie_row,
+                           lowest_grosing_movie_row=lowest_grosing_movie_row, plot_json=plot_json, doughnut=doughnut,
+                           trend1_plot=trend1_plot, highest_rated_movie_row=highest_rated_movie_row,
+                           lowest_rated_movie_row=lowest_rated_movie_row, average_gross=average_gross,
+                           average_imdb_rating=average_imdb_rating, average_rating=average_rating,
+                           average_runtime=average_runtime, graph=graph, plot_html=plot_html,
+                           director_imdb=director_imdb, teremap=teremap)
 
-    # Convert the Plotly chart to JSON format
-    plot_json = fig.to_json()
-
-    fig1 = px.pie(names=certificate_counts.index, 
-                 values=certificate_counts.values, 
-                 hole=0.4, 
-                 title='Distribution of Movie Certificates',
-                 color_discrete_sequence=px.colors.sequential.Sunset[::-1])
-    fig1.update_traces(textposition='inside', textinfo='percent+label')
-
-    # Remove the legend
-    fig1.update_layout(showlegend=True)
-
-    # Convert the Plotly chart to JSON format
-    doughnut = fig1.to_json()
-
-    # Trend 1: IMDb Ratings Distribution
-    trend1 = px.line(df.groupby('Released_Year')['Gross'].sum().reset_index(), 
-                 x='Released_Year', 
-                 y='Gross', 
-                 title='Total Gross Earnings Over the Years',
-                 labels={'Released_Year': 'Year', 'Gross': 'Total Gross Earnings ($)'},
-                 line_shape='spline', 
-                 color_discrete_sequence=px.colors.sequential.Sunsetdark_r) 
-    # Adjust layout for transparent background
-    trend1.update_layout(plot_bgcolor='rgba(0,0,0,0)')
-
-    trend1_plot = trend1.to_json()
-
-    return render_template('index.html', title='Welcome', name='World', highest_grosing_movie_row = highest_grosing_movie_row,
-                           lowest_grosing_movie_row=lowest_grosing_movie_row, plot_json=plot_json, doughnut=doughnut, trend1_plot=trend1_plot,
-                           highest_rated_movie_row=highest_rated_movie_row, lowest_rated_movie_row=lowest_rated_movie_row, average_gross=average_gross, average_imdb_rating=average_imdb_rating,
-                           average_rating=average_rating, average_runtime=average_runtime)
 
 if __name__ == '__main__':
     app.run(debug=True)
